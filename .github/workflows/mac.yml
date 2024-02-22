@@ -16,70 +16,71 @@ jobs:
         type: [ release ]
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Homebrew
-        run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Install GTK4
         run: |
-          brew link --overwrite python@3.11
-          brew install rust gtk4 libheif || true
+          brew install gtk4 libheif || true
           brew link --overwrite python@3.11
 
-      - name: Setup rust version
-        run: rustup default ${{ matrix.toolchain }}
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+            toolchain: {{ matrix.toolchain }}
+            target: aarch64-apple-darwin
 
       - name: Enable LTO
         run: sed -i '' 's/#lto = "thin"/lto = "thin"/g' Cargo.toml
-        if: ${{ (matrix.type == 'release') }}
-
-      - name: Build Release
-        run: cargo build --release
-        if: ${{ matrix.type == 'release'}}
-
+        
+      - name: Build Universal Release
+        run: |
+          cargo build --release --target x86_64-apple-darwin
+          cargo build --release --target aarch64-apple-darwin
+          lipo target/{x86_64,aarch64}-apple-darwin/release/czkawka_cli -create -output target/release/czkawka_cli
+          lipo target/{x86_64,aarch64}-apple-darwin/release/czkawka_gui -create -output target/release/czkawka_gui
+          lipo target/{x86_64,aarch64}-apple-darwin/release/krokiet -create -output target/release/krokiet
+        
       - name: Store MacOS CLI
         uses: actions/upload-artifact@v4
         with:
           name: czkawka_cli-${{ runner.os }}-${{ matrix.toolchain }}
           path: target/release/czkawka_cli
-        if: ${{ matrix.type == 'release' }}
-
+        
       - name: Store MacOS GUI
         uses: actions/upload-artifact@v4
         with:
           name: czkawka_gui-${{ runner.os }}-${{ matrix.toolchain }}
           path: target/release/czkawka_gui
-        if: ${{ matrix.type == 'release' }}
-
+        
       - name: Store MacOS Krokiet
         uses: actions/upload-artifact@v4
         with:
           name: krokiet-${{ runner.os }}-${{ matrix.toolchain }}
           path: target/release/krokiet
-        if: ${{ matrix.type == 'release' }}
-
-      - name: Build Release Heif
-        run: cargo build --release --features heif
-        if: ${{ matrix.type == 'release'}}
-
+        
+      - name: Build Universal Release Heif
+        run: |
+          cargo build --release --features heif --target x86_64-apple-darwin
+          cargo build --release --features heif --target aarch64-apple-darwin
+          lipo target/{x86_64,aarch64}-apple-darwin/release/czkawka_cli -create -output target/release/czkawka_cli
+          lipo target/{x86_64,aarch64}-apple-darwin/release/czkawka_gui -create -output target/release/czkawka_gui
+          lipo target/{x86_64,aarch64}-apple-darwin/release/krokiet -create -output target/release/krokiet
+        
       - name: Store MacOS CLI Heif
         uses: actions/upload-artifact@v4
         with:
           name: czkawka_cli-${{ runner.os }}-${{ matrix.toolchain }}-heif
           path: target/release/czkawka_cli
-        if: ${{ matrix.type == 'release' }}
-
+        
       - name: Store MacOS GUI Heif
         uses: actions/upload-artifact@v4
         with:
           name: czkawka_gui-${{ runner.os }}-${{ matrix.toolchain }}-heif
           path: target/release/czkawka_gui
-        if: ${{ matrix.type == 'release' }}
-
+        
       - name: Store MacOS Krokiet Heif
         uses: actions/upload-artifact@v4
         with:
           name: krokiet-${{ runner.os }}-${{ matrix.toolchain }}-heif
           path: target/release/krokiet
-        if: ${{ matrix.type == 'release' }}
