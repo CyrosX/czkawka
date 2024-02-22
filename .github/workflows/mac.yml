@@ -28,7 +28,7 @@ jobs:
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: {{ matrix.toolchain }}
+          toolchain: ${{ matrix.toolchain }}
           target: aarch64-apple-darwin
 
       - name: Enable LTO
